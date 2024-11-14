@@ -1,10 +1,12 @@
 const Voltage = document.getElementById('myChart');
 let myChart;
 
+// Replace this with your Vercel backend URL
+const BACKEND_URL = 'https://backendmonitors-pxak-bndovmdl3-terdys-projects.vercel.app'; // replace with actual backend URL
 
 async function fetchData() {
     try {
-        const response = await fetch('https://backendmonitors-pxak-bndovmdl3-terdys-projects.vercel.app/api/v1/data/all');
+        const response = await fetch(`${BACKEND_URL}/api/v1/data/all`);
         if (!response.ok) {
             throw new Error('Network response was not ok: ' + response.statusText);
         }
@@ -13,7 +15,6 @@ async function fetchData() {
 
         const voltageData = data.map(entry => entry.voltage);
         const timeData = data.map(entry => new Date(entry.createdAt).toLocaleTimeString());
-
 
         const limitedVoltageData = voltageData.slice(-10);
         const limitedTimeData = timeData.slice(-10);
@@ -65,7 +66,7 @@ function createChart(timeData, voltageData) {
 }
 
 // Establish WebSocket connection
-const socket = new WebSocket('ws://localhost:7000/');
+const socket = new WebSocket(`${BACKEND_URL.replace('https', 'wss')}/`);  // Convert to wss for WebSocket
 
 socket.onopen = () => {
     console.log('WebSocket connection established.');

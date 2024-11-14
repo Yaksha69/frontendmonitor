@@ -1,10 +1,11 @@
 const Voltage2 = document.getElementById('myChart2');
 let myChart2;
+const BACKEND_URL = 'https://backendmonitors-pxak-bndovmdl3-terdys-projects.vercel.app';
 
 // Function to fetch data from the API
 async function fetchData2() {
     try {
-        const response = await fetch('https://backendmonitors-pxak-bndovmdl3-terdys-projects.vercel.app/api/v1/data/all');
+        const response = await fetch(`${BACKEND_URL}/api/v1/data/all`);
         if (!response.ok) {
             throw new Error('Network response was not ok: ' + response.statusText);
         }
