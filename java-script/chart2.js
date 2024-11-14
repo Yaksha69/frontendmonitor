@@ -1,7 +1,5 @@
 const Voltage2 = document.getElementById('myChart2');
 let myChart2;
-const BACKEND_URL = 'https://backendmonitors-pxak-bndovmdl3-terdys-projects.vercel.app';
-
 // Function to fetch data from the API
 async function fetchData2() {
     try {
