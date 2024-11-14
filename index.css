@@ -1,0 +1,120 @@
+@font-face {
+    font-family: myFont;
+    src: url(font/Quicksand-VariableFont_wght.ttf);
+}
+body{
+    background-color: #1F1D38;
+}
+
+nav{
+    background-color: #ed192a;
+}
+
+.navbar-brand{
+    font-size: 3vh;
+}
+
+.container{  
+    margin-top: 5%;  
+    margin-bottom: 10vh;   
+}
+
+.bsu-logo{
+    display: block;
+    max-height: 50px;
+}
+
+.header-con{
+    max-width: 200px;
+    font-family: 'Times New Roman';
+}
+
+.col{
+    color: rgb(0, 0, 0);
+    background-color: rgb(137, 136, 136);
+}
+
+  #myChart {
+    width: 100%; 
+    height: 500px;
+  }
+
+  #myChart2 {
+    width: 100%; 
+    height: 500px;
+  }
+  
+  #myChart3 {
+    width: 100%; 
+    height: 500px;
+  }
+  
+  #myChart4 {
+    width: 100%; 
+    height: 500px;
+  }
+
+
+  
+
+.section2{
+    padding-top: 30px;
+    background-color: #151924;
+    font-family: 'Times New Roman';
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 100px;
+}
+
+
+.container2{
+    height: 100vh;
+    overflow: hidden;
+    position: relative; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.monitor1{
+    margin: 5px 50px 5px 50px;
+    padding-bottom: 10px;
+}
+
+
+@media (max-width: 768px) {
+  .navbar-brand{
+    font-size: 2.2vh;
+    font-weight: bold;
+}
+    #myChart {
+        width: 100%; 
+        height: 300px;
+      }
+    
+      #myChart2 {
+        width: 100%; 
+        height: 300px;
+      }
+      
+      #myChart3 {
+        width: 100%; 
+        height: 300px;
+      }
+      
+      #myChart4 {
+        width: 100%; 
+        height: 300px;
+      }
+
+      .monitor1{
+        margin: 5px 50px 5px 50px;
+        padding-bottom: 10px;
+        width: 80vw;
+        margin-left: 10px;
+    }
+    
+    
+  }
+  
