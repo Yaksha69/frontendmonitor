@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const energyDiv = document.getElementById('energy');
 
     // Use 'wss' and include the full Vercel URL
-    const socket = new WebSocket('wss://elect-monitor-iaks9frfh-terdys-projects.vercel.app');
+    const socket = new WebSocket('wss:https://backendmonitors-pxak-bndovmdl3-terdys-projects.vercel.app/');
 
     // Event listener for when the WebSocket connection is opened
     socket.addEventListener('open', (event) => {
