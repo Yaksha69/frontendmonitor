@@ -1,5 +1,3 @@
-import Ably from 'ably';
-
 document.addEventListener('DOMContentLoaded', () => {
     const voltageDiv = document.getElementById('voltage');
     const currentDiv = document.getElementById('current');
@@ -7,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const energyDiv = document.getElementById('energy');
 
     // Initialize Ably with your API key
-    const ably = new Ably.Realtime({ key: process.env.NEXT_PUBLIC_ABLY_API_KEY });
+    const ably = new Ably.Realtime({ key: 'Y3ohHg.BzTY8A:La8DQsFQ2_a1tgM5_TpnGet-1vGO8LAV4QTf2HikVdI' });  // Use your actual API key
     const channel = ably.channels.get('voltage-data');
 
     // Subscribe to messages from the Ably channel
