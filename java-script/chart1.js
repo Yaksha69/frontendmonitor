@@ -1,9 +1,16 @@
+import Ably from 'ably';
+
 const Voltage = document.getElementById('myChart');
 let myChart;
 
 // Replace this with your Vercel backend URL
 const BACKEND_URL = 'https://backendmonitors-pxak-bndovmdl3-terdys-projects.vercel.app'; // replace with actual backend URL
 
+// Initialize Ably with your API key
+const ably = new Ably.Realtime({ key: 'Y3ohHg.BzTY8A:La8DQsFQ2_a1tgM5_TpnGet-1vGO8LAV4QTf2HikVdI' });  // Use your actual Ably API key
+const channel = ably.channels.get('voltage-data');  // Ably channel name
+
+// Function to fetch data from backend API
 async function fetchData() {
     try {
         const response = await fetch(`${BACKEND_URL}/api/v1/data/all`);
@@ -50,14 +57,14 @@ function createChart(timeData, voltageData) {
                 x: {
                     title: {
                         display: true,
-                        text: 'Time' 
+                        text: 'Time'
                     }
                 },
                 y: {
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Voltage (V)' 
+                        text: 'Voltage (V)'
                     }
                 }
             }
@@ -65,28 +72,18 @@ function createChart(timeData, voltageData) {
     });
 }
 
-// Establish WebSocket connection
-const socket = new WebSocket(`${BACKEND_URL.replace('https', 'wss')}/`);  // Convert to wss for WebSocket
+// Subscribe to the Ably channel for real-time data updates
+channel.subscribe('new-data', (message) => {
+    console.log('Received new data from Ably:', message.data);
 
-socket.onopen = () => {
-    console.log('WebSocket connection established.');
-};
-
-socket.onmessage = (event) => {
-    const newData = JSON.parse(event.data);
-    console.log('Received new data:', newData);
+    // Append the new data to the chart dynamically
+    // Assuming the message contains voltage data and a timestamp
+    const newVoltage = message.data.voltage;
+    const newTime = new Date(message.data.createdAt).toLocaleTimeString();
 
     // Fetch latest data to update the chart
     fetchData(); // Re-fetch data to update the chart
-};
-
-socket.onclose = () => {
-    console.log('WebSocket connection closed.');
-};
-
-socket.onerror = (error) => {
-    console.error('WebSocket error:', error);
-};
+});
 
 // Initial fetch to display the chart
 fetchData();
