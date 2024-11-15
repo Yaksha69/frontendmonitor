@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     channel.subscribe('new-data', (message) => {
         try {
             const data = message.data;
+            // Update the HTML elements with data
             voltageDiv.textContent = data.voltage;
             currentDiv.textContent = data.current;
             powerDiv.textContent = data.power;
