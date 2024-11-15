@@ -1,37 +1,25 @@
+import Ably from 'ably';
+
 document.addEventListener('DOMContentLoaded', () => {
     const voltageDiv = document.getElementById('voltage');
     const currentDiv = document.getElementById('current');
     const powerDiv = document.getElementById('power');
     const energyDiv = document.getElementById('energy');
 
-    // Use 'wss' and include the correct URL
-    const socket = new WebSocket('wss://backendmonitors-pxak-terdys-projects.vercel.app');
+    // Initialize Ably with your API key
+    const ably = new Ably.Realtime({ key: process.env.NEXT_PUBLIC_ABLY_API_KEY });
+    const channel = ably.channels.get('voltage-data');
 
-    // Event listener for when the WebSocket connection is opened
-    socket.addEventListener('open', () => {
-        console.log('WebSocket connection established.');
-    });
-
-    // Event listener for receiving messages from the server
-    socket.addEventListener('message', (event) => {
+    // Subscribe to messages from the Ably channel
+    channel.subscribe('new-data', (message) => {
         try {
-            const data = JSON.parse(event.data);
+            const data = message.data;
             voltageDiv.textContent = data.voltage;
             currentDiv.textContent = data.current;
             powerDiv.textContent = data.power;
             energyDiv.textContent = data.energy;
         } catch (e) {
-            console.error('Error parsing WebSocket message:', e);
+            console.error('Error processing Ably message:', e);
         }
-    });
-
-    // Event listener for WebSocket errors
-    socket.addEventListener('error', (error) => {
-        console.error('WebSocket error:', error);
-    });
-
-    // Event listener for when the WebSocket connection is closed
-    socket.addEventListener('close', () => {
-        console.log('WebSocket connection closed.');
     });
 });
