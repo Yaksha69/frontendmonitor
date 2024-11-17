@@ -1,14 +1,8 @@
-
-
 const Voltage = document.getElementById('myChart');
 let myChart;
 
 // Replace this with your Vercel backend URL
 const BACKEND_URL = 'https://backendmonitors-pxak-bndovmdl3-terdys-projects.vercel.app'; // replace with actual backend URL
-
-// Initialize Ably with your API key
-const ably = new Ably.Realtime({ key: 'Y3ohHg.BzTY8A:La8DQsFQ2_a1tgM5_TpnGet-1vGO8LAV4QTf2HikVdI' });  // Use your actual Ably API key
-const channel = ably.channels.get('voltage-data');  // Ably channel name
 
 // Function to fetch data from backend API
 async function fetchData() {
@@ -72,18 +66,25 @@ function createChart(timeData, voltageData) {
     });
 }
 
-// Subscribe to the Ably channel for real-time data updates
-channel.subscribe('new-data', (message) => {
-    console.log('Received new data from Ably:', message.data);
+// Implement Server-Sent Events (SSE) for real-time updates
+const eventSource = new EventSource(`${BACKEND_URL}/api/v1/data/events`);
 
-    // Append the new data to the chart dynamically
-    // Assuming the message contains voltage data and a timestamp
-    const newVoltage = message.data.voltage;
-    const newTime = new Date(message.data.createdAt).toLocaleTimeString();
+eventSource.onmessage = (event) => {
+    console.log('Received new data from SSE:', event.data);
 
-    // Fetch latest data to update the chart
-    fetchData(); // Re-fetch data to update the chart
-});
+    try {
+        const message = JSON.parse(event.data);
+
+        // Append the new data to the chart dynamically
+        const newVoltage = message.voltage;
+        const newTime = new Date(message.createdAt).toLocaleTimeString();
+
+        // Fetch latest data to update the chart
+        fetchData(); // Re-fetch data to update the chart
+    } catch (e) {
+        console.error('Error processing SSE message:', e);
+    }
+};
 
 // Initial fetch to display the chart
 fetchData();

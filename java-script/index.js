@@ -4,21 +4,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const powerDiv = document.getElementById('power');
     const energyDiv = document.getElementById('energy');
 
-    // Initialize Ably with your API key
-    const ably = new Ably.Realtime({ key: 'Y3ohHg.BzTY8A:La8DQsFQ2_a1tgM5_TpnGet-1vGO8LAV4QTf2HikVdI' });  // Use your actual API key
-    const channel = ably.channels.get('voltage-data');
+    // Create a new EventSource instance to connect to your backend SSE endpoint
+    const eventSource = new EventSource('https://backendmonitors-pxak-qtamft78c-terdys-projects.vercel.app/api/v1/data/events');
 
-    // Subscribe to messages from the Ably channel
-    channel.subscribe('new-data', (message) => {
+    // Listen for messages from the SSE stream
+    eventSource.onmessage = (event) => {
         try {
-            const data = message.data;
-            // Update the HTML elements with data
+            const data = JSON.parse(event.data); // Parse the incoming data
+            // Update the HTML elements with the data
             voltageDiv.textContent = data.voltage;
             currentDiv.textContent = data.current;
             powerDiv.textContent = data.power;
             energyDiv.textContent = data.energy;
         } catch (e) {
-            console.error('Error processing Ably message:', e);
+            console.error('Error processing SSE message:', e);
         }
-    });
+    };
+
+    // Handle connection errors
+    eventSource.onerror = (error) => {
+        console.error('SSE connection error:', error);
+    };
 });
