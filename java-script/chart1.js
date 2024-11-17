@@ -2,9 +2,9 @@ const Voltage = document.getElementById('myChart');
 let myChart;
 
 // Replace this with your Vercel backend URL
-const BACKEND_URL = 'https://backendmonitors-pxak-bndovmdl3-terdys-projects.vercel.app'; // replace with actual backend URL
+const BACKEND_URL = 'https://backendmonitors-pxak-bndovmdl3-terdys-projects.vercel.app'; // replace with your actual backend URL
 
-// Function to fetch data from backend API
+// Function to fetch initial data from the backend API
 async function fetchData() {
     try {
         const response = await fetch(`${BACKEND_URL}/api/v1/data/all`);
@@ -12,26 +12,19 @@ async function fetchData() {
             throw new Error('Network response was not ok: ' + response.statusText);
         }
         const data = await response.json();
-        console.log('Fetched data:', data);
+        console.log('Fetched initial data:', data);
 
         const voltageData = data.map(entry => entry.voltage);
         const timeData = data.map(entry => new Date(entry.createdAt).toLocaleTimeString());
 
-        const limitedVoltageData = voltageData.slice(-10);
-        const limitedTimeData = timeData.slice(-10);
-
-        createChart(limitedTimeData, limitedVoltageData);
+        createChart(timeData, voltageData);
     } catch (error) {
-        console.error('Error fetching sensor data:', error);
+        console.error('Error fetching initial sensor data:', error);
     }
 }
 
 // Function to create or update the chart
 function createChart(timeData, voltageData) {
-    if (myChart) {
-        myChart.destroy(); 
-    }
-
     myChart = new Chart(Voltage, {
         type: 'line',
         data: {
@@ -79,8 +72,21 @@ eventSource.onmessage = (event) => {
         const newVoltage = message.voltage;
         const newTime = new Date(message.createdAt).toLocaleTimeString();
 
-        // Fetch latest data to update the chart
-        fetchData(); // Re-fetch data to update the chart
+        // Update the chart data
+        if (myChart) {
+            // Add new data points to the chart
+            myChart.data.labels.push(newTime);
+            myChart.data.datasets[0].data.push(newVoltage);
+
+            // Limit the chart to display only the last 10 data points
+            if (myChart.data.labels.length > 10) {
+                myChart.data.labels.shift(); // Remove the oldest label
+                myChart.data.datasets[0].data.shift(); // Remove the oldest data point
+            }
+
+            // Update the chart to reflect the changes
+            myChart.update();
+        }
     } catch (e) {
         console.error('Error processing SSE message:', e);
     }
@@ -88,11 +94,3 @@ eventSource.onmessage = (event) => {
 
 // Initial fetch to display the chart
 fetchData();
-
-// Resize event listener to update chart on window resize
-window.addEventListener('resize', () => {
-    if (myChart) {
-        myChart.destroy(); 
-        fetchData(); 
-    }
-});
