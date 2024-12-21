@@ -1,50 +1,25 @@
 const Power = document.getElementById('myChart3');
 let myChart3;
-let ws3;
-
-function initWebSocket3() {
-    ws3 = new WebSocket('wss://backvolts.onrender.com');
-    
-    ws3.onopen = () => {
-        console.log('WebSocket connected for power data');
-    };
-    
-    ws3.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-        
-        if (message.type === 'initial') {
-            const data = message.data;
-            const timeData = data.map(d => new Date(d.createdAt).toLocaleTimeString());
-            const powerData = data.map(d => d.power);
-            createChart3(timeData, powerData);
-        } else if (message.type === 'update') {
-            updateChart3(message.data);
-        }
-    };
-    
-    ws3.onerror = (error) => {
-        console.error('WebSocket error (power):', error);
-    };
-    
-    ws3.onclose = () => {
-        console.log('WebSocket disconnected (power)');
-        setTimeout(initWebSocket3, 3000);
-    };
-}
 
 function updateChart3(newData) {
-    if (!myChart3) {
-        createChart3([new Date(newData.createdAt).toLocaleTimeString()], [newData.power]);
+    if (Array.isArray(newData)) {
+        // Handle initial data
+        createChart3(newData[0], newData[1]);
     } else {
-        myChart3.data.labels.push(new Date(newData.createdAt).toLocaleTimeString());
-        myChart3.data.datasets[0].data.push(newData.power);
-        
-        if (myChart3.data.labels.length > 10) {
-            myChart3.data.labels.shift();
-            myChart3.data.datasets[0].data.shift();
+        // Handle updates
+        if (!myChart3) {
+            createChart3([new Date(newData.createdAt).toLocaleTimeString()], [newData.power]);
+        } else {
+            myChart3.data.labels.push(new Date(newData.createdAt).toLocaleTimeString());
+            myChart3.data.datasets[0].data.push(newData.power);
+            
+            if (myChart3.data.labels.length > 10) {
+                myChart3.data.labels.shift();
+                myChart3.data.datasets[0].data.shift();
+            }
+            
+            myChart3.update();
         }
-        
-        myChart3.update();
     }
 }
 
@@ -65,7 +40,7 @@ function createChart3(timeData, powerData) {
             }]
         },
         options: {
-            animation: false,  // Disable all animations
+            animation: false,
             responsive: true,
             maintainAspectRatio: false,
             scales: {
@@ -87,7 +62,8 @@ function createChart3(timeData, powerData) {
     });
 }
 
-initWebSocket3();
+// Register this chart with the WebSocket manager
+window.chartManager.registerChart('power', updateChart3);
 
 window.addEventListener('resize', () => {
     if (myChart3) {

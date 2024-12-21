@@ -1,50 +1,25 @@
 const Current = document.getElementById('myChart2');
 let myChart2;
-let ws2;
-
-function initWebSocket2() {
-    ws2 = new WebSocket('wss://backvolts.onrender.com');
-    
-    ws2.onopen = () => {
-        console.log('WebSocket connected for current data');
-    };
-    
-    ws2.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-        
-        if (message.type === 'initial') {
-            const data = message.data;
-            const timeData = data.map(d => new Date(d.createdAt).toLocaleTimeString());
-            const currentData = data.map(d => d.current);
-            createChart2(timeData, currentData);
-        } else if (message.type === 'update') {
-            updateChart2(message.data);
-        }
-    };
-    
-    ws2.onerror = (error) => {
-        console.error('WebSocket error (current):', error);
-    };
-    
-    ws2.onclose = () => {
-        console.log('WebSocket disconnected (current)');
-        setTimeout(initWebSocket2, 3000);
-    };
-}
 
 function updateChart2(newData) {
-    if (!myChart2) {
-        createChart2([new Date(newData.createdAt).toLocaleTimeString()], [newData.current]);
+    if (Array.isArray(newData)) {
+        // Handle initial data
+        createChart2(newData[0], newData[1]);
     } else {
-        myChart2.data.labels.push(new Date(newData.createdAt).toLocaleTimeString());
-        myChart2.data.datasets[0].data.push(newData.current);
-        
-        if (myChart2.data.labels.length > 10) {
-            myChart2.data.labels.shift();
-            myChart2.data.datasets[0].data.shift();
+        // Handle updates
+        if (!myChart2) {
+            createChart2([new Date(newData.createdAt).toLocaleTimeString()], [newData.current]);
+        } else {
+            myChart2.data.labels.push(new Date(newData.createdAt).toLocaleTimeString());
+            myChart2.data.datasets[0].data.push(newData.current);
+            
+            if (myChart2.data.labels.length > 10) {
+                myChart2.data.labels.shift();
+                myChart2.data.datasets[0].data.shift();
+            }
+            
+            myChart2.update();
         }
-        
-        myChart2.update();
     }
 }
 
@@ -87,7 +62,8 @@ function createChart2(timeData, currentData) {
     });
 }
 
-initWebSocket2();
+// Register this chart with the WebSocket manager
+window.chartManager.registerChart('current', updateChart2);
 
 window.addEventListener('resize', () => {
     if (myChart2) {
