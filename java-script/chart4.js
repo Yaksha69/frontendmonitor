@@ -1,30 +1,53 @@
 const Energy = document.getElementById('myChart4');
 let myChart4;
+let ws4;
 
-// Function to fetch data from the API
-async function fetchEnergyData() {
-    try {
-        const response = await fetch(`${BACKEND_URL}/api/v1/data/all`);
-        if (!response.ok) {
-            throw new Error('Network response was not ok: ' + response.statusText);
+function initWebSocket4() {
+    ws4 = new WebSocket('wss://backvolts.onrender.com');
+    
+    ws4.onopen = () => {
+        console.log('WebSocket connected for energy data');
+    };
+    
+    ws4.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        
+        if (message.type === 'initial') {
+            const data = message.data;
+            const timeData = data.map(d => new Date(d.createdAt).toLocaleTimeString());
+            const energyData = data.map(d => d.energy);
+            createChart4(timeData, energyData);
+        } else if (message.type === 'update') {
+            updateChart4(message.data);
         }
-        const data = await response.json();
-        console.log('Fetched energy data:', data); 
+    };
+    
+    ws4.onerror = (error) => {
+        console.error('WebSocket error (energy):', error);
+    };
+    
+    ws4.onclose = () => {
+        console.log('WebSocket disconnected (energy)');
+        setTimeout(initWebSocket4, 3000);
+    };
+}
 
-        const energyData = data.map(entry => entry.energy); 
-        const timeData = data.map(entry => new Date(entry.createdAt).toLocaleTimeString()); 
-
-        // Limit to the last 10 data points
-        const limitedEnergyData = energyData.slice(-10);
-        const limitedTimeData = timeData.slice(-10);
-
-        createChart4(limitedTimeData, limitedEnergyData);
-    } catch (error) {
-        console.error('Error fetching energy data:', error);
+function updateChart4(newData) {
+    if (!myChart4) {
+        createChart4([new Date(newData.createdAt).toLocaleTimeString()], [newData.energy]);
+    } else {
+        myChart4.data.labels.push(new Date(newData.createdAt).toLocaleTimeString());
+        myChart4.data.datasets[0].data.push(newData.energy);
+        
+        if (myChart4.data.labels.length > 10) {
+            myChart4.data.labels.shift();
+            myChart4.data.datasets[0].data.shift();
+        }
+        
+        myChart4.update();
     }
 }
 
-// Function to create or update the chart
 function createChart4(timeData, energyData) {
     if (myChart4) {
         myChart4.destroy(); 
@@ -38,13 +61,13 @@ function createChart4(timeData, energyData) {
                 label: 'Energy Data', 
                 data: energyData, 
                 borderWidth: 1,
-                borderColor: 'rgba(54, 162, 235, 1)', // Updated color if needed
+                borderColor: 'rgba(54, 162, 235, 1)',
             }]
         },
         options: {
+            animation: false,  // Disable all animations
             responsive: true,
             maintainAspectRatio: false,
-            animation: false, // Disable animations
             scales: {
                 x: {
                     title: {
@@ -56,7 +79,7 @@ function createChart4(timeData, energyData) {
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Energy (Wh)' // Y-axis label for Energy
+                        text: 'Energy (Wh)' 
                     }
                 }
             }
@@ -64,36 +87,15 @@ function createChart4(timeData, energyData) {
     });
 }
 
-// Establish WebSocket connection
-const socket4 = new WebSocket('ws://localhost:7000/');
+initWebSocket4();
 
-socket4.onopen = () => {
-    console.log('WebSocket connection established for Chart 4.');
-};
-
-socket4.onmessage = (event) => {
-    const newData = JSON.parse(event.data);
-    console.log('Received new data for Chart 4:', newData);
-
-    // Fetch latest data to update the chart
-    fetchEnergyData(); // Re-fetch data to update the chart
-};
-
-socket4.onclose = () => {
-    console.log('WebSocket connection closed for Chart 4.');
-};
-
-socket4.onerror = (error) => {
-    console.error('WebSocket error for Chart 4:', error);
-};
-
-// Initial fetch to display the chart
-fetchEnergyData();
-
-// Resize event listener to update chart on window resize
+// Update resize handler
 window.addEventListener('resize', () => {
     if (myChart4) {
-        myChart4.destroy(); 
-        fetchEnergyData(); 
+        myChart4.destroy();
+        createChart4(
+            myChart4.data.labels,
+            myChart4.data.datasets[0].data
+        );
     }
 });

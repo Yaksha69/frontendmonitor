@@ -1,49 +1,73 @@
-const Voltage2 = document.getElementById('myChart2');
+const Current = document.getElementById('myChart2');
 let myChart2;
-// Function to fetch data from the API
-async function fetchData2() {
-    try {
-        const response = await fetch(`${BACKEND_URL}/api/v1/data/all`);
-        if (!response.ok) {
-            throw new Error('Network response was not ok: ' + response.statusText);
+let ws2;
+
+function initWebSocket2() {
+    ws2 = new WebSocket('wss://backvolts.onrender.com');
+    
+    ws2.onopen = () => {
+        console.log('WebSocket connected for current data');
+    };
+    
+    ws2.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        
+        if (message.type === 'initial') {
+            const data = message.data;
+            const timeData = data.map(d => new Date(d.createdAt).toLocaleTimeString());
+            const currentData = data.map(d => d.current);
+            createChart2(timeData, currentData);
+        } else if (message.type === 'update') {
+            updateChart2(message.data);
         }
-        const data = await response.json();
-        console.log('Fetched data:', data);
+    };
+    
+    ws2.onerror = (error) => {
+        console.error('WebSocket error (current):', error);
+    };
+    
+    ws2.onclose = () => {
+        console.log('WebSocket disconnected (current)');
+        setTimeout(initWebSocket2, 3000);
+    };
+}
 
-        const currentData = data.map(entry => entry.current);
-        const timeData = data.map(entry => new Date(entry.createdAt).toLocaleTimeString());
-
-        // Limit to the last 10 data points
-        const limitedCurrentData = currentData.slice(-10);
-        const limitedTimeData = timeData.slice(-10);
-
-        createChart2(limitedTimeData, limitedCurrentData);
-    } catch (error) {
-        console.error('Error fetching sensor data:', error);
+function updateChart2(newData) {
+    if (!myChart2) {
+        createChart2([new Date(newData.createdAt).toLocaleTimeString()], [newData.current]);
+    } else {
+        myChart2.data.labels.push(new Date(newData.createdAt).toLocaleTimeString());
+        myChart2.data.datasets[0].data.push(newData.current);
+        
+        if (myChart2.data.labels.length > 10) {
+            myChart2.data.labels.shift();
+            myChart2.data.datasets[0].data.shift();
+        }
+        
+        myChart2.update();
     }
 }
 
-// Function to create or update the chart
 function createChart2(timeData, currentData) {
     if (myChart2) {
         myChart2.destroy(); 
     }
 
-    myChart2 = new Chart(Voltage2, {
+    myChart2 = new Chart(Current, {
         type: 'line',
         data: {
-            labels: timeData,
+            labels: timeData, 
             datasets: [{
-                label: 'Current Data',
-                data: currentData,
+                label: 'Current Data', 
+                data: currentData, 
                 borderWidth: 1,
-                borderColor: 'rgb(255,128,144)',
+                borderColor: 'rgba(153, 102, 255, 1)',
             }]
         },
         options: {
+            animation: false,
             responsive: true,
             maintainAspectRatio: false,
-            animation: false,
             scales: {
                 x: {
                     title: {
@@ -55,7 +79,7 @@ function createChart2(timeData, currentData) {
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Current (A)' // Change to Current for better clarity
+                        text: 'Current (A)' 
                     }
                 }
             }
@@ -63,36 +87,14 @@ function createChart2(timeData, currentData) {
     });
 }
 
-// Establish WebSocket connection
-const socket2 = new WebSocket('ws://localhost:7000/');
+initWebSocket2();
 
-socket2.onopen = () => {
-    console.log('WebSocket connection established for Chart 2.');
-};
-
-socket2.onmessage = (event) => {
-    const newData = JSON.parse(event.data);
-    console.log('Received new data for Chart 2:', newData);
-
-    // Fetch latest data to update the chart
-    fetchData2(); // Re-fetch data to update the chart
-};
-
-socket2.onclose = () => {
-    console.log('WebSocket connection closed for Chart 2.');
-};
-
-socket2.onerror = (error) => {
-    console.error('WebSocket error for Chart 2:', error);
-};
-
-// Initial fetch to display the chart
-fetchData2();
-
-// Resize event listener to update chart on window resize
 window.addEventListener('resize', () => {
     if (myChart2) {
-        myChart2.destroy(); 
-        fetchData2(); 
+        myChart2.destroy();
+        createChart2(
+            myChart2.data.labels,
+            myChart2.data.datasets[0].data
+        );
     }
 });

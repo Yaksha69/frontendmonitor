@@ -1,30 +1,53 @@
 const Power = document.getElementById('myChart3');
 let myChart3;
+let ws3;
 
-// Function to fetch data from the API
-async function fetchPowerData() {
-    try {
-        const response = await fetch(`${BACKEND_URL}/api/v1/data/all`);
-        if (!response.ok) {
-            throw new Error('Network response was not ok: ' + response.statusText);
+function initWebSocket3() {
+    ws3 = new WebSocket('wss://backvolts.onrender.com');
+    
+    ws3.onopen = () => {
+        console.log('WebSocket connected for power data');
+    };
+    
+    ws3.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        
+        if (message.type === 'initial') {
+            const data = message.data;
+            const timeData = data.map(d => new Date(d.createdAt).toLocaleTimeString());
+            const powerData = data.map(d => d.power);
+            createChart3(timeData, powerData);
+        } else if (message.type === 'update') {
+            updateChart3(message.data);
         }
-        const data = await response.json();
-        console.log('Fetched power data:', data); 
+    };
+    
+    ws3.onerror = (error) => {
+        console.error('WebSocket error (power):', error);
+    };
+    
+    ws3.onclose = () => {
+        console.log('WebSocket disconnected (power)');
+        setTimeout(initWebSocket3, 3000);
+    };
+}
 
-        const powerData = data.map(entry => entry.power); 
-        const timeData = data.map(entry => new Date(entry.createdAt).toLocaleTimeString()); 
-
-        // Limit to the last 10 data points
-        const limitedPowerData = powerData.slice(-10);
-        const limitedTimeData = timeData.slice(-10);
-
-        createChart3(limitedTimeData, limitedPowerData);
-    } catch (error) {
-        console.error('Error fetching power data:', error);
+function updateChart3(newData) {
+    if (!myChart3) {
+        createChart3([new Date(newData.createdAt).toLocaleTimeString()], [newData.power]);
+    } else {
+        myChart3.data.labels.push(new Date(newData.createdAt).toLocaleTimeString());
+        myChart3.data.datasets[0].data.push(newData.power);
+        
+        if (myChart3.data.labels.length > 10) {
+            myChart3.data.labels.shift();
+            myChart3.data.datasets[0].data.shift();
+        }
+        
+        myChart3.update();
     }
 }
 
-// Function to create or update the chart
 function createChart3(timeData, powerData) {
     if (myChart3) {
         myChart3.destroy(); 
@@ -38,13 +61,13 @@ function createChart3(timeData, powerData) {
                 label: 'Power Data', 
                 data: powerData, 
                 borderWidth: 1,
-                borderColor: 'rgb(255,255,0)',
+                borderColor: 'rgba(75, 192, 192, 1)',
             }]
         },
         options: {
+            animation: false,  // Disable all animations
             responsive: true,
             maintainAspectRatio: false,
-            animation: false, // Disable animations
             scales: {
                 x: {
                     title: {
@@ -56,7 +79,7 @@ function createChart3(timeData, powerData) {
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Power (W)' // Y-axis label for Power
+                        text: 'Power (W)' 
                     }
                 }
             }
@@ -64,36 +87,14 @@ function createChart3(timeData, powerData) {
     });
 }
 
-// Establish WebSocket connection
-const socket3 = new WebSocket('ws://localhost:7000/');
+initWebSocket3();
 
-socket3.onopen = () => {
-    console.log('WebSocket connection established for Chart 3.');
-};
-
-socket3.onmessage = (event) => {
-    const newData = JSON.parse(event.data);
-    console.log('Received new data for Chart 3:', newData);
-
-    // Fetch latest data to update the chart
-    fetchPowerData(); // Re-fetch data to update the chart
-};
-
-socket3.onclose = () => {
-    console.log('WebSocket connection closed for Chart 3.');
-};
-
-socket3.onerror = (error) => {
-    console.error('WebSocket error for Chart 3:', error);
-};
-
-// Initial fetch to display the chart
-fetchPowerData();
-
-// Resize event listener to update chart on window resize
 window.addEventListener('resize', () => {
     if (myChart3) {
-        myChart3.destroy(); 
-        fetchPowerData(); 
+        myChart3.destroy();
+        createChart3(
+            myChart3.data.labels,
+            myChart3.data.datasets[0].data
+        );
     }
 });

@@ -4,25 +4,54 @@ document.addEventListener('DOMContentLoaded', () => {
     const powerDiv = document.getElementById('power');
     const energyDiv = document.getElementById('energy');
 
-    // Create an EventSource to connect to the SSE endpoint
-    const eventSource = new EventSource('https://backvolts.onrender.com/api/v1/data/all');
+    let ws;
 
-    // Listen for messages and update the UI
-    eventSource.onmessage = (event) => {
-        try {
-            const data = JSON.parse(event.data);
-            voltageDiv.textContent = data.voltage;
-            currentDiv.textContent = data.current;
-            powerDiv.textContent = data.power;
-            energyDiv.textContent = data.energy;
-        } catch (error) {
-            console.error('Error parsing SSE data:', error);
-        }
-    };
+    function initWebSocket() {
+        ws = new WebSocket('wss://backvolts.onrender.com');
+        
+        ws.onopen = () => {
+            console.log('WebSocket connected for live values');
+        };
+        
+        ws.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            
+            if (message.type === 'initial') {
+                // Update with the most recent value from the initial data
+                const lastData = message.data[message.data.length - 1];
+                updateValues(lastData);
+            } else if (message.type === 'update') {
+                // Handle regular updates
+                updateValues(message.data);
+            }
+        };
+        
+        ws.onerror = (error) => {
+            console.error('WebSocket error (live values):', error);
+        };
+        
+        ws.onclose = () => {
+            console.log('WebSocket disconnected (live values)');
+            // Set values to 'No data' when connection is lost
+            setNoData();
+            // Attempt to reconnect after a delay
+            setTimeout(initWebSocket, 3000);
+        };
+    }
 
-    // Handle errors
-    eventSource.onerror = (error) => {
-        console.error('SSE connection error:', error);
-        eventSource.close(); // Close the connection if needed
-    };
+    function updateValues(data) {
+        voltageDiv.textContent = data.voltage;
+        currentDiv.textContent = data.current;
+        powerDiv.textContent = data.power;
+        energyDiv.textContent = data.energy;
+    }
+
+    function setNoData() {
+        voltageDiv.textContent = 'No data';
+        currentDiv.textContent = 'No data';
+        powerDiv.textContent = 'No data';
+        energyDiv.textContent = 'No data';
+    }
+
+    initWebSocket();
 });
