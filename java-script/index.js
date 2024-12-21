@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const energyDiv = document.getElementById('energy');
 
     // Create an EventSource to connect to the SSE endpoint
-    const eventSource = new EventSource('https://backendmonitors-pxak-qtamft78c-terdys-projects.vercel.app/api/v1/data/events');
+    const eventSource = new EventSource('https://backvolts.onrender.com/api/v1/data/all');
 
     // Listen for messages and update the UI
     eventSource.onmessage = (event) => {

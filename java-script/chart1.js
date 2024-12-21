@@ -2,7 +2,7 @@ const Voltage = document.getElementById('myChart');
 let myChart;
 
 // Replace this with your Vercel backend URL
-const BACKEND_URL = 'https://backendmonitors-pxak-bndovmdl3-terdys-projects.vercel.app'; // replace with your actual backend URL
+const BACKEND_URL = 'https://frontendmonitor.vercel.app/'; // replace with your actual backend URL
 
 // Function to fetch initial data from the backend API
 async function fetchData() {
